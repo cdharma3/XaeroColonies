@@ -34,9 +34,6 @@ public class Network {
                 SyncColoniesPacket.CODEC,
                 (packet, ctx) -> ctx.enqueueWork(() -> {
                     ColonyClaimCache.setClaims(packet.level(), packet.chunks());
-                    System.out.println(
-                            ColonyClaimCache.getClaims()
-                    );
 
                 })
         );

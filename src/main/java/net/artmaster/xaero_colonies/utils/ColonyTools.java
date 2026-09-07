@@ -9,45 +9,45 @@ import net.minecraft.world.level.ChunkPos;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class ColonyTools {
 
+    // Last claim map sent to each player, so section crossings only resend on a real change.
+    private static final Map<UUID, Map<Long, ColonyInfo>> LAST_SENT = new HashMap<>();
 
+    public static void updateColonyCash(ServerPlayer player, ServerLevel level) {
+        updateColonyCash(player, level, false);
+    }
 
-    public static void updateColonyCash(ServerPlayer player, ServerLevel level) { //update color and name of colony
-            Map<Long, ColonyInfo> chunks = new HashMap<>();
+    public static void updateColonyCash(ServerPlayer player, ServerLevel level, boolean force) {
+        Map<Long, ColonyInfo> chunks = new HashMap<>();
 
-            MinecoloniesAPIProxy.getInstance()
-                    .getColonyManager()
-                    .getAllColonies()
-                    .forEach(colony -> {
-                        if (colony.getWorld().equals(level)) {
+        MinecoloniesAPIProxy.getInstance()
+                .getColonyManager()
+                .getAllColonies()
+                .forEach(colony -> {
+                    if (colony.getWorld().equals(level)) {
+                        int color = colony.getTeamColonyColor().getColor() & 0xFFFFFF;
+                        ColonyInfo info = new ColonyInfo(color, colony.getName(), colony.getID());
+                        Colony colonyImpl = (Colony) colony;
+                        colonyImpl.getClaimData().keySet().forEach(packed -> {
+                            ChunkPos pos = new ChunkPos(packed);
+                            chunks.put(ChunkPos.asLong(pos.x, pos.z), info);
+                        });
+                    }
+                });
 
-                            int color = colony.getTeamColonyColor().getColor() & 0xFFFFFF;
-                            String name = colony.getName();
-                            int id = colony.getID();
-
-
-                            ColonyInfo info = new ColonyInfo(color, name, id);
-                            Colony colonyImpl = (Colony) colony;
-
-
-                            colonyImpl.getClaimData().keySet().forEach(packed -> {
-                                ChunkPos pos = new ChunkPos(packed);
-                                chunks.put(
-                                        ChunkPos.asLong(pos.x, pos.z),
-                                        info
-                                );
-                            });
-                        }
-                    });
-
-
-        //10 ticks delay for adding highlights after all operations of original mod
-        ServerScheduler.schedule(10, () -> {
-            Network.syncColonies(player, chunks);
-        });
-
-
+        if (!force && chunks.equals(LAST_SENT.get(player.getUUID()))) {
+            return;
         }
+        LAST_SENT.put(player.getUUID(), chunks);
+
+        // 10 ticks delay so MineColonies has finished its own claim bookkeeping.
+        ServerScheduler.schedule(10, () -> Network.syncColonies(player, chunks));
+    }
+
+    public static void forget(ServerPlayer player) {
+        LAST_SENT.remove(player.getUUID());
+    }
 }

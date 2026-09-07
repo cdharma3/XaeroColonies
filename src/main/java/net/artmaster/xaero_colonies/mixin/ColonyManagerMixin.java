@@ -45,7 +45,7 @@ public class ColonyManagerMixin {
         var ownerId = iColony.getPermissions().getOwner();
         Player owner = iColony.getWorld().getPlayerByUUID(ownerId);
 
-        if (owner.level() instanceof ServerLevel level && owner instanceof ServerPlayer serverPlayer) {
+        if (owner != null && owner.level() instanceof ServerLevel level && owner instanceof ServerPlayer serverPlayer) {
             ColonyTools.updateColonyCash(serverPlayer, level);
         }
     }

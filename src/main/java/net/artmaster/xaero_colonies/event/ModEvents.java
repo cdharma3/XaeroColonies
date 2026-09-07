@@ -9,29 +9,27 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
-
 @EventBusSubscriber(modid = ModMain.MODID)
 public class ModEvents {
 
-
     @SubscribeEvent
-    public static void onUpdateColony(EntityEvent.EnteringSection event) { //updating terrain white player entering chunk
-        if (event.getEntity() instanceof ServerPlayer player) {
-            if (player.level() instanceof ServerLevel level) {
-                ColonyTools.updateColonyCash(player, level);
-            }
+    public static void onUpdateColony(EntityEvent.EnteringSection event) {
+        if (event.getEntity() instanceof ServerPlayer player && player.level() instanceof ServerLevel level) {
+            ColonyTools.updateColonyCash(player, level);
         }
     }
 
-
+    @SubscribeEvent
+    public static void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player && player.level() instanceof ServerLevel level) {
+            ColonyTools.updateColonyCash(player, level, true);
+        }
+    }
 
     @SubscribeEvent
-    public static void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event) { //updating terrain on player join
-
+    public static void onPlayerLeave(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            if (player.level() instanceof ServerLevel level) {
-                ColonyTools.updateColonyCash(player, level);
-            }
+            ColonyTools.forget(player);
         }
     }
 }
